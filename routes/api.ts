@@ -1,11 +1,12 @@
 import { Router } from "express";
-import multer from "multer";
-import { getS3Link } from "../controllers/getS3Link";
-import { multerUpload } from "../controllers/multerUpload";
+import { cropImage, cropUpload } from "../controllers/CropController";
+import { getS3Link } from "../controllers/upload/getS3Link";
+import { multerUpload } from "../controllers/upload/multerUpload";
 
-const routes = Router();
+const api = Router();
 
-routes.post("/upload", multerUpload, getS3Link, )
+api.post("/upload", multerUpload, getS3Link, )
+api.post("/crop", cropUpload, cropImage )
 
-export default routes;
+export default api;
 

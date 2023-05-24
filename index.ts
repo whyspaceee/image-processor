@@ -3,7 +3,7 @@ dotenv.config();
 import serverless from 'serverless-http';
 import express from 'express';
 import cors from "cors";
-import routes from './routes/api';
+import api from './routes/api';
 const app = express()
 const port = 3000
   
@@ -18,7 +18,7 @@ app.use(
 
 app.use(express.json());
 
-app.use("/api", routes);
+app.use("/api", api);
 
  
 module.exports.handler = serverless(app);
