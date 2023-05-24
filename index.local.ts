@@ -1,7 +1,6 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import serverless from 'serverless-http';
 import express from 'express';
 import cors from "cors";
 import routes from './routes/api';

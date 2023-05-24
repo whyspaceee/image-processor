@@ -11,36 +11,35 @@ export const cropUpload = multer({
 export const cropImage = (req: Request, res: Response) => {
   // Retrieve the file from the 'file' field in the request body
   const file = req.file as Express.Multer.File;
-  const { width, height, top, left } = req.body;
+  const { width, height, top, left} = req.body;
 
   // Check if a file is provided
   if (!file) {
     return res.status(400).json({ error: "No file uploaded" });
   }
+  
 
   const key = `${Date.now()}_${file.originalname}`;
-  const config = {
-    jpeg: { quality: 80 },
-    webp: { quality: 80 },
-    png: { compressionLevel: 8 },
-  };
+
+  if (!width || !height || !top || !left) {
+    return res.status(400).json({ error: "Missing crop parameters" });
+  }
 
   const crop = {
-    left: left,
-    top: top,
-    width: width,
-    height: height,
+    left: parseInt(left),
+    top: parseInt(top),
+    width: parseInt(width),
+    height: parseInt(height),
   };
 
   //crop image using sharp
-  const image = sharp(file.buffer);
-  image
+  sharp(file.buffer)
     .extract(crop)
     .toBuffer()
     .then((buffer) => {
         s3.send(
         new PutObjectCommand({
-          Bucket: "gama",
+          Bucket: "gama-scalable",
           Key: key,
           Body: buffer,
           ContentType: file.mimetype,
@@ -49,10 +48,10 @@ export const cropImage = (req: Request, res: Response) => {
       );
     })
     .then(() => {
-      return res.json({ message: "File cropped successfully" });
+      return res.json({ message: "File cropped successfully", url: `${s3.config.endpoint}/${key}` });
     })
     .catch((err) => {
       console.log(err);
-      return res.status(500).json({ error: "Could not crop image" });
+      return res.status(500).json({ error: `Could not crop image, ${err}`, file  });
     });
 };

@@ -1,0 +1,23 @@
+service: scalable
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  apiGateway:
+    binaryMediaTypes:
+      - 'multipart/form-data'
+
+
+functions:
+  api:
+    handler: index.handler
+    events:
+      - httpApi: '*'
+
+plugins:
+  - serverless-plugin-typescript
+  - serverless-offline
+  - serverless-dotenv-plugin
+
+useDotenv: true
