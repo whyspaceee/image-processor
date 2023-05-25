@@ -19,7 +19,7 @@ app.use(
 
 app.use(express.json());
 
-app.use("/api", api);
+app.use("/", api);
 
  
 module.exports.handler = serverless(app);

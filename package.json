@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/index.local.js\"",
+    "dev": "concurrently \"npx tsc --watch\" \"nodemon -q .build/index.local.js\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -30,6 +30,8 @@
     "serverless-dotenv-plugin": "^6.0.0",
     "serverless-offline": "^12.0.4",
     "serverless-plugin-typescript": "^2.1.4",
-    "typescript": "^5.0.4"
+    "typescript": "^5.0.4",
+    "nodemon": "^2.0.22"
+
   }
 }

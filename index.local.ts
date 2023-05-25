@@ -21,7 +21,7 @@ app.use(
 
 app.use(express.json());
 
-app.use("/api", routes);
+app.use("/", routes);
  
 app.listen(port, () => {
   console.log(process.env.S3_KEY, process.env.S3_SECRET)

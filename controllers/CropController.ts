@@ -48,7 +48,7 @@ export const cropImage = (req: Request, res: Response) => {
       );
     })
     .then(() => {
-      return res.json({ message: "File cropped successfully", url: `${s3.config.endpoint}/${key}` });
+      return res.json({ message: "File cropped successfully", url: `https://gama-scalable.s3.ap-southeast-1.amazonaws.com/${key}`});
     })
     .catch((err) => {
       console.log(err);
