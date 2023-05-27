@@ -11,7 +11,7 @@ export const cropUpload = multer({
 export const cropImage = (req: Request, res: Response) => {
   // Retrieve the file from the 'file' field in the request body
   const file = req.file as Express.Multer.File;
-  const { width, height, top, left} = req.body;
+  const { width, height, top, left } = req.body;
 
   // Check if a file is provided
   if (!file) {
@@ -19,7 +19,7 @@ export const cropImage = (req: Request, res: Response) => {
   }
   
 
-  const key = `${Date.now()}_${file.originalname}`;
+  const key = `crop/${Date.now()}_${file.originalname}`;
 
   if (!width || !height || !top || !left) {
     return res.status(400).json({ error: "Missing crop parameters" });
@@ -37,10 +37,10 @@ export const cropImage = (req: Request, res: Response) => {
     .extract(crop)
     .toBuffer()
     .then((buffer) => {
-        s3.send(
+        return s3.send(
         new PutObjectCommand({
-          Bucket: "gama-scalable",
           Key: key,
+          Bucket: "gama-scalable",
           Body: buffer,
           ContentType: file.mimetype,
           ACL: "public-read",
