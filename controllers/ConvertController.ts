@@ -1,51 +1,63 @@
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { Request, Response } from "express";
-import multer from "multer";
 import sharp from "sharp";
 import { s3 } from "../utils/aws";
+import { streamToBuffer } from "../utils/streamToBuffer";
+import { NextFunction } from "connect";
 
-export const convertUpload = multer({
-    storage: multer.memoryStorage(),
-  }).single("image");
+export const convertImage = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { imageId } = req.params; // Extract the imageId parameter from the request URL
 
-export const convertImage = (req: Request, res: Response) => {
-  // Retrieve the file from the 'file' field in the request body
-  const file = req.file as Express.Multer.File;
-  const { width, height, top, left } = req.body;
+    const { format } = req.query; // Extract the format query parameter from the request URL
 
-  // Check if a file is provided
-  if (!file) {
-    return res.status(400).json({ error: "No file uploaded" });
-  }
+    if (format !== "jpeg" && format !== "png" && format !== "webp") {
+      return res.status(400).json({ error: "invalid format" }); // If the format is not one of the allowed formats, return an error response
+    }
+    
+    // Fetch the image file from the S3 bucket using the imageId
+    const data = await s3.send(
+      new GetObjectCommand({
+        Key: imageId,
+        Bucket: "gama-scalable",
+      })
+    );
 
-  const key = `${Date.now()}_${file.originalname.replace(/\.[^/.]+$/, "")}.jpeg`;
-  const config = {
-    jpeg: { quality: 80 },
-    webp: { quality: 80 },
-    png: { compressionLevel: 8 },
-  };
+    const stream = data.Body; // Get the image data stream from the fetched object
 
+    if (!stream) {
+      return res.status(400).json({ error: "error" }); // If the stream is empty, return an error response
+    }
 
-  //convert image using sharp
-  const image = sharp(file.buffer).toFormat("jpeg");
-  image
-    .toBuffer()
-    .then((buffer) => {
-        s3.send(
-        new PutObjectCommand({
-          Bucket: "gama",
-          Key: key,
-          Body: buffer,
-          ContentType: "file/jpeg",
-          ACL: "public-read",
-        })
-      );
-    })
-    .then(() => {
-      return res.json({ message: "File converted successfully" });
-    })
-    .catch((err) => {
-      console.log(err);
-      return res.status(500).json({ error: "Could not convert image" });
+    const buffer = await streamToBuffer(stream); // Convert the stream to a buffer
+
+    // Convert the image buffer to the requested format (jpeg, png, webp)
+    const convertedBuffer = await sharp(buffer).toFormat(format).toBuffer();
+
+    if (!convertedBuffer) {
+      return res.status(400).json({ error: "error" }); // If the conversion fails, return an error response
+    }
+
+    const split = imageId.split("_");
+    const originalname = split.slice(1).join("_");
+    const key = `${Date.now()}_${originalname.replace(/\.[^/.]+$/, "")}.${format}`; // Generate a unique key for the converted image
+
+    // Upload the converted image buffer to the S3 bucket with the generated key
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: "gama-scalable",
+        Key: key,
+        Body: convertedBuffer,
+        ContentType: `image/${format}`,
+        ACL: "public-read",
+      })
+    );
+
+    return res.json({
+      message: "File converted successfully",
+      url: `https://gama-scalable.s3.ap-southeast-1.amazonaws.com/${key}`, // Return the URL of the converted image
     });
+  } catch (err) {
+    next(err); // If an error occurs, pass it to the error handling middleware
+  }
 };

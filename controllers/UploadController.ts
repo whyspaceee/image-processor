@@ -1,32 +1,30 @@
 import { Request, Response } from "express";
-import multer from "multer";
-import multerS3 from "multer-s3";
 import { s3 } from "../utils/aws";
-
-const upload = multer({
-  storage: multerS3({
-    s3: s3,
-    bucket: "gama-scalable",
-    acl: "public-read",
-    contentType: multerS3.AUTO_CONTENT_TYPE,
-    key: function (req, file, cb) {
-      cb(null, `upload/${Date.now()}_${file.originalname}`);
-    },
-  }),
-});
-
-export const multerUpload = upload.single("image");
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 
 // Function to get an S3 link for file upload
 export const getS3Link = (req: Request, res: Response) => {
   // Retrieve the file from the 'file' field in the request body
-  const file = req.file as Express.MulterS3.File;
+  const { imageId } = req.params;
 
-  // Check if a file is provided
-  if (!file) {
-    return res.status(400).json({ error: "No file uploaded" });
-  }
+  if (!imageId) return res.status(400).json({ error: "no filename given" });
 
-  // Send a JSON response indicating successful file upload
-  res.json({ message: "File uploaded ! ", url: file.location });
+  const { contentType } = req.query;
+
+  const key = `${Date.now()}_${imageId}`;
+
+  const command = new PutObjectCommand({
+    Bucket: "gama-scalable",
+    Key: key,
+    ContentType: contentType?.toString(),
+  });
+
+  getSignedUrl(s3 as any, command as any, { expiresIn: 3600 })
+    .then((url) => {
+      return res.json({ url, key });
+    })
+    .catch((error) => {
+      return res.status(400).json({ error });
+    });
 };
