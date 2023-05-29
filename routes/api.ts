@@ -1,15 +1,14 @@
 import { Router } from "express";
-import { cropImage, cropUpload } from "../controllers/CropController";
-import { convertImage, convertUpload } from "../controllers/ConvertController";
-import { getS3Link, multerUpload } from  "../controllers/UploadController";
-import { compressJPEG, compressUpload } from "../controllers/CompressController";
+
+import { cropImage, } from "../controllers/CropController";
+import { convertImage,  } from "../controllers/ConvertController";
+import { getS3Link } from  "../controllers/UploadController";
 
 const api = Router();
 
-api.post("/upload", multerUpload, getS3Link, )
-api.post("/crop", cropUpload, cropImage )
-api.post("/convert", convertUpload, convertImage )
-api.post("/compress", compressUpload, compressJPEG )
+api.post("/upload/:imageId", getS3Link, )
+api.post("/crop/:imageId", cropImage )
+api.post("/convert/:imageId", convertImage )
 
 api.get("/", (req, res) => {
     res.send("Hello World!");

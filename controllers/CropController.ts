@@ -1,57 +1,70 @@
-import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { Request, Response } from "express";
-import multer from "multer";
+import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { NextFunction, Request, Response } from "express";
 import sharp from "sharp";
 import { s3 } from "../utils/aws";
+import { streamToBuffer } from "../utils/streamToBuffer";
 
-export const cropUpload = multer({
-  storage: multer.memoryStorage(),
-}).single("image");
+export const cropImage = async (req: Request, res: Response, next: NextFunction ) => {
+    const { imageId } = req.params;
 
-export const cropImage = (req: Request, res: Response) => {
-  // Retrieve the file from the 'file' field in the request body
-  const file = req.file as Express.Multer.File;
-  const { width, height, top, left } = req.body;
+    const { width, height } = req.query;
 
-  // Check if a file is provided
-  if (!file) {
-    return res.status(400).json({ error: "No file uploaded" });
-  }
-  
+    const top = req.query.top || "0";
+    const left = req.query.left || "0";
 
-  const key = `crop/${Date.now()}_${file.originalname}`;
+    if (!imageId) {
+      return res.status(400).json({ error: "Missing imageid" });
+    }
 
-  if (!width || !height || !top || !left) {
-    return res.status(400).json({ error: "Missing crop parameters" });
-  }
+    if (!width || !height) {
+      return res.status(400).json({ error: "Missing crop parameters" });
+    }
 
-  const crop = {
-    left: parseInt(left),
-    top: parseInt(top),
-    width: parseInt(width),
-    height: parseInt(height),
-  };
+    const crop = {
+      left: parseInt(left.toString()),
+      top: parseInt(top.toString()),
+      width: parseInt(width.toString()),
+      height: parseInt(height.toString()),
+    };
 
-  //crop image using sharp
-  sharp(file.buffer)
-    .extract(crop)
-    .toBuffer()
-    .then((buffer) => {
-        return s3.send(
-        new PutObjectCommand({
-          Key: key,
-          Bucket: "gama-scalable",
-          Body: buffer,
-          ContentType: file.mimetype,
-          ACL: "public-read",
-        })
-      );
-    })
-    .then(() => {
-      return res.json({ message: "File cropped successfully", url: `https://gama-scalable.s3.ap-southeast-1.amazonaws.com/${key}`});
-    })
-    .catch((err) => {
-      console.log(err);
-      return res.status(500).json({ error: `Could not crop image, ${err}`, file  });
+    const object = await s3.send(
+      new GetObjectCommand({
+        Key: imageId,
+        Bucket: "gama-scalable",
+      })
+    );
+
+    if (!object.Body) {
+      return res.status(400).json({ error: "image not found" });
+    }
+
+    const buffer = await streamToBuffer(object.Body);
+
+    const metadata = await sharp(buffer).metadata();
+    
+    const originalname = imageId.split("_").slice(1).join("_");
+
+    const key = `crop/${Date.now()}_${originalname}`;
+
+    const croppedBuffer = await sharp(buffer).extract(crop).toBuffer();
+
+    if (!croppedBuffer) {
+      return res.status(400).json({ error: "unable to crop image" });
+    }
+
+    await s3.send(
+      new PutObjectCommand({
+        Key: key,
+        Bucket: "gama-scalable",
+        Body: croppedBuffer,
+        ACL: "public-read",
+        ContentType: metadata.format,
+      })
+    );
+
+    return res.json({
+      message: "File cropped successfully",
+      url: `https://gama-scalable.s3.ap-southeast-1.amazonaws.com/${key}`,
     });
+  
 };
