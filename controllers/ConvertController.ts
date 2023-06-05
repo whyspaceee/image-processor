@@ -15,6 +15,10 @@ export const convertImage = async (
     const tokenKey = String(req.auth?.key);
     const { imageId } = req.params; // Extract the imageId parameter from the request URL
 
+    if (!imageId) {
+      return res.status(400).json({ error: "no filename given" });
+    } 
+
     if (!tokenKey) {
       return res.status(400).json({ error: "invalid jwt" }); // If the format is not one of the allowed formats, return an error response
     }
