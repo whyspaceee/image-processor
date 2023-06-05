@@ -1,18 +1,47 @@
 import { Router } from "express";
 
-import { cropImage, } from "../controllers/CropController";
-import { convertImage,  } from "../controllers/ConvertController";
-import { getS3Link } from  "../controllers/UploadController";
+import { cropImage } from "../controllers/CropController";
+import { convertImage } from "../controllers/ConvertController";
+import { getS3Link } from "../controllers/UploadController";
+import { compressImage } from "../controllers/CompressController";
+import { expressjwt } from "express-jwt";
 
 const api = Router();
 
-api.post("/upload/:imageId", getS3Link, )
-api.post("/crop/:imageId", cropImage )
-api.post("/convert/:imageId", convertImage )
+api.post(
+  "/upload/:imageId",
+  getS3Link
+);
+
+api.post(
+  "/crop/:imageId",
+  expressjwt({
+    secret: process.env.JWT_SECRET as string,
+    algorithms: ["HS256"],
+  }),
+  cropImage
+);
+
+api.post(
+  "/convert/:imageId",
+  expressjwt({
+    secret: process.env.JWT_SECRET as string,
+    algorithms: ["HS256"],
+  }),
+  convertImage
+);
+
+api.post(
+  "/compress/:imageId",
+  expressjwt({
+    secret: process.env.JWT_SECRET as string,
+    algorithms: ["HS256"],
+  }),
+  compressImage
+);
 
 api.get("/", (req, res) => {
-    res.send("Hello World!");
+  res.send("Hello World!");
 });
 
 export default api;
-

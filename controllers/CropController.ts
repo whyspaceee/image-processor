@@ -4,7 +4,7 @@ import sharp from "sharp";
 import { s3 } from "../utils/aws";
 import { streamToBuffer } from "../utils/streamToBuffer";
 
-export const cropImage = async (req: Request, res: Response, next: NextFunction ) => {
+export const cropImage = async (req: Request, res: any ) => {
     const { imageId } = req.params;
 
     const { width, height } = req.query;
