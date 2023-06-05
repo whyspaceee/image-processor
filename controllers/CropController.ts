@@ -1,11 +1,21 @@
 import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Response } from "express";
+import { Request } from "express-jwt";
 import sharp from "sharp";
 import { s3 } from "../utils/aws";
 import { streamToBuffer } from "../utils/streamToBuffer";
 
-export const cropImage = async (req: Request, res: any ) => {
-    const { imageId } = req.params;
+export const cropImage = async (req: Request, res: Response ) => {
+  const tokenKey = String(req.auth?.key);
+  const { imageId } = req.params; // Extract the imageId parameter from the request URL
+
+  if (!tokenKey) {
+    return res.status(400).json({ error: "invalid jwt" }); // If the format is not one of the allowed formats, return an error response
+  }
+
+  if (tokenKey !== imageId) {
+    return res.status(400).json({ error: "invalid jwt" }); // If the format is not one of the allowed formats, return an error response
+  }
 
     const { width, height } = req.query;
 
