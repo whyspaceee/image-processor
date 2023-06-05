@@ -5,6 +5,7 @@ import { convertImage } from "../controllers/ConvertController";
 import { getS3Link } from "../controllers/UploadController";
 import { compressImage } from "../controllers/CompressController";
 import { expressjwt } from "express-jwt";
+import editMiddleware from "../middlewares/EditMiddleware";
 
 const api = Router();
 
@@ -19,6 +20,7 @@ api.post(
     secret: process.env.JWT_SECRET as string,
     algorithms: ["HS256"],
   }),
+  editMiddleware,
   cropImage
 );
 
@@ -28,6 +30,7 @@ api.post(
     secret: process.env.JWT_SECRET as string,
     algorithms: ["HS256"],
   }),
+  editMiddleware,
   convertImage
 );
 
@@ -37,6 +40,7 @@ api.post(
     secret: process.env.JWT_SECRET as string,
     algorithms: ["HS256"],
   }),
+  editMiddleware,
   compressImage
 );
 
