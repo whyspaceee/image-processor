@@ -6,8 +6,19 @@ import { getS3Link } from "../controllers/UploadController";
 import { compressImage } from "../controllers/CompressController";
 import { expressjwt } from "express-jwt";
 import editMiddleware from "../middlewares/EditMiddleware";
+import { getEditImageLink } from "../controllers/EditController";
 
 const api = Router();
+
+api.get(
+  "/edit/:imageId",
+  expressjwt({
+    secret: process.env.JWT_SECRET as string,
+    algorithms: ["HS256"],
+  }),
+  editMiddleware,
+  getEditImageLink
+);
 
 api.post(
   "/upload/:imageId",

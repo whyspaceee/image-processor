@@ -11,17 +11,7 @@ export const compressImage = async (
   next: NextFunction
 ) => {
   try {
-    const tokenKey = String(req.auth?.key);
     const { imageId } = req.params; // Extract the imageId parameter from the request URL
-
-    if (!tokenKey) {
-      return res.status(400).json({ error: "invalid jwt" }); // If the format is not one of the allowed formats, return an error response
-    }
-
-    if (tokenKey !== imageId) {
-      return res.status(400).json({ error: "invalid jwt" }); // If the format is not one of the allowed formats, return an error response
-    }
-
     const format = req.query.format?.toString(); // Extract the format query parameter from the request URL
     const quality = parseInt(req.query.quality?.toString() || "80");
 
